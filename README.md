@@ -144,6 +144,58 @@ El primer notebook descarga automáticamente el dataset y genera el archivo proc
 
 ---
 
+## Demo funcional con Streamlit
+
+El proyecto incluye una demo interactiva en `app.py` para generar recomendaciones de productos de forma consistente a partir de `data/dataset_modelo.csv`.
+
+### Ejecutar la demo
+
+Instalar dependencias:
+
+```bash
+pip install -r requirements.txt
+```
+
+Iniciar Streamlit:
+
+```bash
+streamlit run app.py
+```
+
+Luego abrir la URL local que muestra Streamlit, normalmente:
+
+```text
+http://localhost:8501
+```
+
+### Qué permite hacer
+
+* Generar recomendaciones para un cliente existente.
+* Generar recomendaciones para un cliente nuevo usando un fallback por popularidad y rating.
+* Filtrar recomendaciones por categoría de producto.
+* Elegir el número de recomendaciones a mostrar.
+* Excluir productos que el cliente ya compró.
+* Visualizar el perfil básico del cliente y su historial reciente.
+
+### Lógica de recomendación
+
+La demo usa un ranking reproducible sobre el dataset procesado:
+
+```text
+score = popularidad + rating + compradores + afinidad por categoría
+```
+
+Para clientes existentes, se agrega una señal de afinidad basada en las categorías que el cliente ya compró. Para clientes nuevos, la demo recomienda productos con buen balance entre popularidad, rating promedio y número de compradores.
+
+### Casos contemplados
+
+* Si no existe `data/dataset_modelo.csv`, la app muestra un mensaje claro indicando que se debe ejecutar primero el ETL.
+* Si faltan columnas requeridas, la app informa cuáles columnas hacen falta.
+* Si los filtros no devuelven resultados, la app sugiere relajar los filtros.
+* Si el cliente es nuevo, la app evita depender de historial inexistente y usa recomendaciones generales.
+
+---
+
 ## Modelos de Machine Learning
 
 El proyecto compara múltiples modelos supervisados:
