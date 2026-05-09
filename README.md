@@ -1,4 +1,4 @@
-# FinCommerce Recommendation System
+﻿# FinCommerce Recommendation System
 
 Proyecto de Machine Learning enfocado en el análisis del dataset brasileño de E-commerce de Olist y en la construcción de modelos de recomendación y clasificación basados en comportamiento de clientes, popularidad de productos y patrones transaccionales.
 
@@ -127,7 +127,7 @@ Windows:
 ### 3. Instalar dependencias
 
 ```bash
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
 ```
 
 ---
@@ -141,6 +141,71 @@ pip install -r requirements.txt
 ```
 
 El primer notebook descarga automáticamente el dataset y genera el archivo procesado utilizado en los notebooks posteriores.
+
+---
+
+## Demo funcional con Streamlit
+
+El proyecto incluye una demo interactiva en `app.py` para generar recomendaciones de productos usando `data/dataset_modelo.csv` y el modelo  ganador guardado desde `notebooks/Modelado.ipynb`.
+
+### Ejecutar la demo
+
+Instalar dependencias:
+
+```bash
+py -m pip install -r requirements.txt
+```
+
+Ejecutar completo el notebook de modelado para entrenar y guardar el modelo ganador:
+
+```text
+notebooks/Modelado.ipynb
+```
+
+La celda final del notebook genera:
+
+```text
+models/lightgbm_recommender.joblib
+```
+
+Iniciar Streamlit:
+
+```bash
+py -m streamlit run app.py
+```
+
+Luego abrir la URL local que muestra Streamlit, normalmente:
+
+```text
+http://localhost:8501
+```
+
+### Que permite hacer
+
+* Generar recomendaciones para un cliente existente.
+* Usar el modelo LightGBM entrenado para estimar la macro-categoria recomendada.
+* Filtrar recomendaciones por categoria de producto.
+* Elegir el numero de recomendaciones a mostrar.
+* Excluir productos que el cliente ya compro.
+* Visualizar el perfil basico del cliente y su historial reciente.
+
+### Logica de recomendacion
+
+El modelo se guarda en:
+
+```text
+models/lightgbm_recommender.joblib
+```
+
+Este archivo se genera en la celda final de `notebooks/Modelado.ipynb`. El modelo LightGBM predice probabilidades de macro-categoria usando las mismas features del notebook de modelado. Luego la demo ordena productos candidatos combinando probabilidad del modelo, popularidad, rating y afinidad historica del cliente.
+
+### Casos contemplados
+
+* Si no existe `data/dataset_modelo.csv`, la app muestra un mensaje claro indicando que se debe ejecutar primero el ETL.
+* Si no existe `models/lightgbm_recommender.joblib`, la app indica que se debe ejecutar completo `notebooks/Modelado.ipynb`.
+* Si faltan columnas requeridas, la app informa cuales columnas hacen falta.
+* Si los filtros no devuelven resultados, la app sugiere relajar los filtros.
+* La demo trabaja unicamente con clientes existentes del dataset procesado.
 
 ---
 
@@ -171,5 +236,7 @@ Métricas evaluadas:
 * Pipeline CI/CD con GitHub Actions
 
 ---
+
+
 
 

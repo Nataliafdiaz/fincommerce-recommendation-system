@@ -8,3 +8,5 @@ lightgbm
 kagglehub
 jupyter
 ipykernel
+streamlit
+joblib
