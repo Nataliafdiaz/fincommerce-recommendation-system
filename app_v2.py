@@ -26,170 +26,6 @@ st.set_page_config(
 )
 
 
-st.markdown(
-    """
-    <style>
-    :root {
-        --fincommerce-navy: #001B3A;
-        --fincommerce-blue: #003566;
-        --fincommerce-aqua: #11D6BE;
-        --fincommerce-aqua-hover: #00F0C8;
-        --fincommerce-bg: #F5F7FA;
-        --fincommerce-text-muted: #6B778C;
-        --fincommerce-dark-panel: #0D1117;
-    }
-
-    .stApp {
-        background-color: var(--fincommerce-bg);
-        color: var(--fincommerce-navy);
-    }
-
-    header[data-testid="stHeader"] {
-        background-color: var(--fincommerce-dark-panel);
-    }
-
-    .block-container {
-        padding-top: 1.25rem;
-        padding-bottom: 3rem;
-        max-width: 1500px;
-    }
-
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, var(--fincommerce-navy) 0%, var(--fincommerce-blue) 100%);
-        color: #FFFFFF;
-    }
-
-    section[data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
-    }
-
-    h1 {
-        color: var(--fincommerce-navy);
-        font-size: 3rem;
-        font-weight: 800;
-        letter-spacing: 0;
-        margin-bottom: 0.25rem;
-    }
-
-    h2, h3 {
-        color: var(--fincommerce-navy);
-        font-weight: 700;
-        letter-spacing: 0;
-    }
-
-    p, li, .stCaptionContainer {
-        color: var(--fincommerce-text-muted);
-    }
-
-    div[data-testid="metric-container"] {
-        background-color: transparent;
-        border: 0;
-        border-left: 0;
-        padding: 0;
-        border-radius: 0;
-        box-shadow: none;
-    }
-
-    [data-testid="stMetricLabel"] {
-        color: var(--fincommerce-text-muted) !important;
-        font-size: 1rem !important;
-        font-weight: 600 !important;
-        opacity: 1 !important;
-    }
-
-    [data-testid="stMetricLabel"] > div {
-        color: var(--fincommerce-text-muted) !important;
-    }
-
-    div[data-testid="stMetricValue"] {
-        color: var(--fincommerce-navy) !important;
-        font-size: 2.35rem;
-        font-weight: 800;
-        line-height: 1.1;
-    }
-
-    .stButton button {
-        background-color: var(--fincommerce-aqua);
-        color: var(--fincommerce-navy) !important;
-        border: none;
-        border-radius: 12px;
-        font-weight: 700;
-        padding: 0.65rem 1rem;
-        transition: background-color 120ms ease, transform 120ms ease;
-    }
-
-    .stButton button:hover {
-        background-color: var(--fincommerce-aqua-hover);
-        color: var(--fincommerce-navy) !important;
-        border: none;
-        transform: translateY(-1px);
-    }
-
-    .stButton button:focus {
-        box-shadow: 0 0 0 0.2rem rgba(17, 214, 190, 0.25);
-    }
-
-    section[data-testid="stSidebar"] .stButton button {
-        width: 100%;
-    }
-
-    div[data-baseweb="select"] > div {
-        background-color: #0D1117;
-        border-color: transparent;
-        border-radius: 10px;
-    }
-
-    .stCheckbox [data-testid="stWidgetLabel"] p,
-    .stSlider [data-testid="stWidgetLabel"] p,
-    .stSelectbox [data-testid="stWidgetLabel"] p {
-        font-weight: 600;
-    }
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 1.25rem;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        color: #FFFFFF;
-        padding-left: 0;
-        padding-right: 0;
-        font-weight: 600;
-    }
-
-    .stTabs [aria-selected="true"] {
-        color: #FF5252 !important;
-    }
-
-    .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #FF5252;
-    }
-
-    [data-testid="stExpander"] {
-        background-color: transparent;
-        border: none;
-        box-shadow: none;
-    }
-
-    .streamlit-expanderHeader {
-        color: var(--fincommerce-navy) !important;
-        font-weight: 700;
-    }
-
-    [data-testid="stDataFrame"] {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid rgba(0, 27, 58, 0.08);
-    }
-
-    .stAlert {
-        border-radius: 10px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
 @st.cache_data(show_spinner="Cargando datos procesados...")
 def load_data(path: Path, category_mapping_items: tuple[tuple[str, str], ...]) -> pd.DataFrame:
     if not path.exists():
@@ -337,7 +173,7 @@ def predict_customer_categories(
     model_artifact: dict,
 ) -> pd.DataFrame:
     candidates = catalog.copy()
-    if candidates.empty or not profile["summary"]:
+    if candidates.empty:
         return pd.DataFrame(columns=["macro_category", "category_probability"])
 
     customer_values = profile["summary"]
@@ -411,12 +247,7 @@ def recommend_products(
 
     return (
         candidates.sort_values(
-            [
-                "recommendation_score",
-                "category_probability",
-                "product_rating",
-                "product_popularity",
-            ],
+            ["recommendation_score", "category_probability", "product_rating", "product_popularity"],
             ascending=False,
             kind="mergesort",
         )
@@ -451,11 +282,47 @@ def format_recommendations(recommendations: pd.DataFrame) -> pd.DataFrame:
     return output
 
 
-def show_customer_profile(profile: dict) -> None:
-    if not profile["summary"]:
-        st.warning("No se encontro historial para el cliente seleccionado.")
-        return
+model_artifact = load_model_artifact(MODEL_PATH)
+category_mapping_items = tuple(model_artifact["category_mapping"].items())
+df = load_data(DATA_PATH, category_mapping_items)
+catalog = build_product_catalog(df)
 
+st.title("FinCommerce Recommendation System")
+st.caption("Demo funcional para generar recomendaciones de productos con datos Olist procesados.")
+
+with st.sidebar:
+    st.header("Parametros")
+    top_n = st.slider("Numero de recomendaciones", min_value=3, max_value=20, value=10)
+    exclude_purchased = st.checkbox("Excluir productos ya comprados", value=True)
+
+    customer_options = sorted(df["customer_unique_id"].dropna().unique())
+    customer_id = st.selectbox(
+        "Cliente existente",
+        customer_options,
+        index=0,
+    )
+    refresh_recommendations = st.button(
+        "Actualizar recomendaciones",
+        type="primary",
+        use_container_width=True,
+    )
+
+profile = customer_profile(df, customer_id)
+
+summary_cols = st.columns(4)
+summary_cols[0].metric("Registros", f"{len(df):,}")
+summary_cols[1].metric("Productos", f"{df['product_id'].nunique():,}")
+summary_cols[2].metric("Clientes", f"{df['customer_unique_id'].nunique():,}")
+summary_cols[3].metric("Categorias", f"{df['product_category_name'].nunique():,}")
+
+model_metrics = model_artifact.get("metrics", {})
+if model_metrics:
+    metric_cols = st.columns(3)
+    metric_cols[0].metric("Modelo", model_artifact.get("model_name", "LightGBM"))
+    metric_cols[1].metric("F1 weighted", f"{model_metrics['f1_weighted']:.3f}")
+    metric_cols[2].metric("Accuracy", f"{model_metrics['accuracy']:.3f}")
+
+if profile["summary"]:
     st.subheader("Perfil del cliente")
     metric_cols = st.columns(4)
     metric_cols[0].metric("Compras", profile["summary"]["Compras"])
@@ -480,30 +347,6 @@ def show_customer_profile(profile: dict) -> None:
         ].drop_duplicates().head(20)
         st.dataframe(history, use_container_width=True, hide_index=True)
 
-
-model_artifact = load_model_artifact(MODEL_PATH)
-category_mapping_items = tuple(model_artifact["category_mapping"].items())
-df = load_data(DATA_PATH, category_mapping_items)
-catalog = build_product_catalog(df)
-
-with st.sidebar:
-    st.header("Parametros")
-    top_n = st.slider("Numero de recomendaciones", min_value=3, max_value=20, value=10)
-    exclude_purchased = st.checkbox("Excluir productos ya comprados", value=True)
-
-    customer_options = sorted(df["customer_unique_id"].dropna().unique())
-    customer_id = st.selectbox(
-        "Cliente existente",
-        customer_options,
-        index=0,
-    )
-    refresh_recommendations = st.button(
-        "Actualizar recomendaciones",
-        type="primary",
-        use_container_width=True,
-    )
-
-profile = customer_profile(df, customer_id)
 recommendations = recommend_products(
     catalog=catalog,
     profile=profile,
@@ -512,83 +355,23 @@ recommendations = recommend_products(
     exclude_purchased=exclude_purchased,
 )
 
-st.title("Dashboard de Recomendaciones Inteligentes")
-st.caption("Sistema de recomendacion personalizado para optimizar la experiencia de compra")
+st.subheader("Recomendaciones")
+if refresh_recommendations:
+    st.success("Recomendaciones actualizadas para el cliente seleccionado.")
 
-tab_dashboard, tab_modelo, tab_metodologia = st.tabs(
-    ["Dashboard", "Metricas del modelo", "Metodologia"]
-)
-
-with tab_dashboard:
-    st.subheader("Metricas generales")
-
-    total_spend = df["customer_total_spend"].max()
-    summary_cols = st.columns(5)
-    summary_cols[0].metric("No. de registros", f"{len(df):,}")
-    summary_cols[1].metric("No. de productos", f"{df['product_id'].nunique():,}")
-    summary_cols[2].metric("No. de clientes", f"{df['customer_unique_id'].nunique():,}")
-    summary_cols[3].metric("No. de categorias", f"{df['product_category_name'].nunique():,}")
-    summary_cols[4].metric("Gasto total", f"${total_spend:,.0f}")
-
-    show_customer_profile(profile)
-
-    st.subheader("Recomendaciones")
-    if refresh_recommendations:
-        st.success("Recomendaciones actualizadas para el cliente seleccionado.")
-
-    if recommendations.empty:
-        st.warning(
-            "No hay recomendaciones para la macro-categoria ganadora con los parametros actuales. "
-            "Prueba permitiendo productos ya comprados."
-        )
-    else:
-        st.dataframe(
-            format_recommendations(recommendations),
-            use_container_width=True,
-            hide_index=True,
-        )
-
-with tab_modelo:
-    st.subheader("Metricas del modelo")
-    model_metrics = model_artifact.get("metrics", {})
-
-    if model_metrics:
-        metric_cols = st.columns(3)
-        metric_cols[0].metric("Modelo", model_artifact.get("model_name", "LightGBM"))
-        metric_cols[1].metric("F1 weighted", f"{model_metrics.get('f1_weighted', 0):.3f}")
-        metric_cols[2].metric("Accuracy", f"{model_metrics.get('accuracy', 0):.3f}")
-
-        st.write("Metricas disponibles en el artefacto del modelo:")
-        metrics_df = pd.DataFrame(
-            [{"Metrica": key, "Valor": value} for key, value in model_metrics.items()]
-        )
-        st.dataframe(metrics_df, use_container_width=True, hide_index=True)
-    else:
-        st.warning(
-            "El archivo del modelo no contiene metricas guardadas en la clave 'metrics'. "
-            "La app sigue funcionando para recomendar productos."
-        )
-
-    st.subheader("Informacion del artefacto")
-    st.write(f"Modelo usado: **{model_artifact.get('model_name', 'LightGBM')}**")
-    st.write(
-        "Numero de variables usadas por el modelo: "
-        f"**{len(model_artifact.get('features', []))}**"
+if recommendations.empty:
+    st.warning(
+        "No hay recomendaciones para la macro-categoria ganadora con los parametros actuales. "
+        "Prueba permitiendo productos ya comprados."
+    )
+else:
+    st.dataframe(
+        format_recommendations(recommendations),
+        use_container_width=True,
+        hide_index=True,
     )
 
-    with st.expander("Variables del modelo"):
-        features = model_artifact.get("features", [])
-        if features:
-            st.dataframe(
-                pd.DataFrame({"feature": features}),
-                use_container_width=True,
-                hide_index=True,
-            )
-        else:
-            st.info("No se encontro la lista de features dentro del artefacto del modelo.")
-
-with tab_metodologia:
-    st.subheader("Como se calculan las recomendaciones")
+with st.expander("Como se calculan las recomendaciones"):
     st.write(
         "La demo carga el modelo ganador del notebook 3: LightGBM. "
         "El modelo predice la macro-categoria mas probable para el cliente seleccionado. "
@@ -597,34 +380,33 @@ with tab_metodologia:
         "El modelo no predice un product_id directamente; el producto se elige en este segundo paso de ranking."
     )
 
-    st.markdown(
-        """
-        ### Metodologia del sistema de recomendacion
+    
+    st.markdown("""
+    ### Metodología del sistema de recomendación
 
-        El sistema utiliza un modelo de recomendacion basado en comportamiento historico de compra de los usuarios.
+    El sistema utiliza un modelo de recomendación basado en comportamiento histórico de compra de los usuarios.
 
-        Para generar recomendaciones se consideran variables como:
+    Para generar recomendaciones se consideran variables como:
 
-        - Categorias previamente compradas
-        - Popularidad de productos
-        - Rating promedio
-        - Cantidad de compradores
-        - Afinidad entre categorias
+    - Categorías previamente compradas
+    - Popularidad de productos
+    - Rating promedio
+    - Cantidad de compradores
+    - Afinidad entre categorías
 
-        ### Metricas utilizadas
+    ### Métricas utilizadas
 
-        - Precision@K
-        - Recall@K
-        - NDCG
+    - Precision@K
+    - Recall@K
+    - NDCG
 
-        Estas metricas permiten evaluar la relevancia y calidad del ranking de recomendaciones.
+    Estas métricas permiten evaluar la relevancia y calidad del ranking de recomendaciones.
 
-        ### Valor de negocio
+    ### Valor de negocio
 
-        El sistema busca:
-        - aumentar conversion,
-        - mejorar experiencia del usuario,
-        - fomentar cross-selling,
-        - incrementar retencion de clientes.
-        """
-    )
+    El sistema busca:
+    - aumentar conversión,
+    - mejorar experiencia del usuario,
+    - fomentar cross-selling,
+    - incrementar retención de clientes.
+    """)
